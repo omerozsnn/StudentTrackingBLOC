@@ -8,11 +8,15 @@ import 'package:ogrenci_takip_sistemi/blocs/prayer_surah_student/prayer_surah_st
 import 'package:ogrenci_takip_sistemi/blocs/prayer_surah_student/prayer_surah_student_event.dart';
 import 'package:ogrenci_takip_sistemi/blocs/prayer_surah_student/prayer_surah_student_state.dart';
 import 'package:ogrenci_takip_sistemi/models/prayer_surah_model.dart';
-import 'package:ogrenci_takip_sistemi/screens/prayer_surah/prayer_surah_screen.dart';
+import 'package:ogrenci_takip_sistemi/screens/prayer_surah/prayer_surah_management_page.dart';
 import 'package:ogrenci_takip_sistemi/screens/prayer_surah/prayer_surah_tracking_screen.dart';
 import 'package:ogrenci_takip_sistemi/utils/snackbar_helper.dart';
 import 'package:ogrenci_takip_sistemi/widgets/prayer_surah/student_selection_card.dart';
 import 'package:http/http.dart' as http;
+import 'package:ogrenci_takip_sistemi/blocs/class/class_bloc.dart';
+import 'package:ogrenci_takip_sistemi/blocs/class/class_event.dart';
+import 'package:ogrenci_takip_sistemi/blocs/class/class_state.dart';
+import 'package:ogrenci_takip_sistemi/models/classes_model.dart';
 
 class PrayerSurahAssignmentScreen extends StatefulWidget {
   const PrayerSurahAssignmentScreen({Key? key}) : super(key: key);
@@ -31,7 +35,8 @@ class _PrayerSurahAssignmentScreenState
     super.initState();
     // Load prayer surahs
     context.read<PrayerSurahBloc>().add(LoadPrayerSurahs());
-    // Load classes from class bloc (this should be done by the parent widget that provides class bloc)
+    // Load classes from class bloc
+    context.read<ClassBloc>().add(LoadClassesForDropdown());
   }
 
   Future<void> loadStudentImage(int studentId) async {
@@ -50,68 +55,30 @@ class _PrayerSurahAssignmentScreenState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Sure ve Dua Atama'),
-        backgroundColor: Colors.teal,
-        foregroundColor: Colors.white,
-        actions: [
-          // Sure ve Dua Ekleme button
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline),
-            tooltip: 'Sure ve Dua Ekleme',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const PrayerSurahScreen(),
-                ),
-              ).then((_) {
-                // Refresh prayer/surah list when returning from add page
-                context.read<PrayerSurahBloc>().add(LoadPrayerSurahs());
-              });
-            },
-          ),
-          // Sure ve Dua Takip button
-          IconButton(
-            icon: const Icon(Icons.track_changes),
-            tooltip: 'Sure ve Dua Takip',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const PrayerSurahTrackingScreen(),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-      body: BlocListener<PrayerSurahStudentBloc, PrayerSurahStudentState>(
-        listener: (context, state) {
-          if (state.status == PrayerSurahStudentStatus.failure &&
-              state.errorMessage != null) {
-            SnackbarHelper.showErrorSnackBar(
-              context,
-              state.errorMessage!,
-            );
-          } else if (state.status == PrayerSurahStudentStatus.success) {
-            // Optionally show success message for certain operations
-          }
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              // Sınıf ve sure/dua seçimi
-              _buildSelectionArea(),
-              const SizedBox(height: 20),
-              // Öğrenci listesi
-              _buildStudentList(),
-              // Atama butonları
-              _buildActionButtons(),
-            ],
-          ),
+    return BlocListener<PrayerSurahStudentBloc, PrayerSurahStudentState>(
+      listener: (context, state) {
+        if (state.status == PrayerSurahStudentStatus.failure &&
+            state.errorMessage != null) {
+          SnackbarHelper.showErrorSnackBar(
+            context,
+            state.errorMessage!,
+          );
+        } else if (state.status == PrayerSurahStudentStatus.success) {
+          // Optionally show success message for certain operations
+        }
+      },
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            // Sınıf ve sure/dua seçimi
+            _buildSelectionArea(),
+            const SizedBox(height: 20),
+            // Öğrenci listesi
+            _buildStudentList(),
+            // Atama butonları
+            _buildActionButtons(),
+          ],
         ),
       ),
     );
@@ -149,33 +116,41 @@ class _PrayerSurahAssignmentScreenState
 
   Widget _buildClassDropdown(PrayerSurahStudentState prayerSurahStudentState) {
     // We should get classes from the ClassBloc
-    return BlocBuilder<PrayerSurahBloc, PrayerSurahState>(
-      builder: (context, prayerSurahState) {
-        // This is just a placeholder - in a real implementation, you would use ClassBloc
-        final classes = ["Sınıf 1", "Sınıf 2", "Sınıf 3"];
+    return BlocBuilder<ClassBloc, ClassState>(
+      builder: (context, classState) {
+        if (classState is ClassLoading && classState.classes.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-        return DropdownButtonFormField<String>(
-          value: prayerSurahStudentState.selectedClass,
+        if (classState.classes.isEmpty) {
+          return const Text('Henüz sınıf eklenmemiş.');
+        }
+
+        return DropdownButtonFormField<Classes>(
+          value: classState.selectedClass,
           decoration: InputDecoration(
             labelText: 'Sınıf Seçin',
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
             ),
           ),
-          items: classes.map((String value) {
-            return DropdownMenuItem<String>(
-              value: value,
+          items: classState.classes.map((Classes classData) {
+            return DropdownMenuItem<Classes>(
+              value: classData,
               child: Text(
-                value,
+                classData.sinifAdi,
                 style: const TextStyle(color: Colors.black),
               ),
             );
           }).toList(),
           onChanged: (newValue) {
             if (newValue != null) {
+              // Dispatch event to ClassBloc to update its state
+              context.read<ClassBloc>().add(SelectClass(newValue));
+              // Dispatch event to PrayerSurahStudentBloc to update its state
               context
                   .read<PrayerSurahStudentBloc>()
-                  .add(SetSelectedClass(newValue));
+                  .add(SetSelectedClass(newValue.sinifAdi)); // Assuming SetSelectedClass takes a string
             }
           },
         );

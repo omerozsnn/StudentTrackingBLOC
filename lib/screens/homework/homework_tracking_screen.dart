@@ -215,113 +215,92 @@ class _HomeworkTrackingScreenState extends State<HomeworkTrackingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.blueGrey,
-        foregroundColor: Colors.white,
-        title: const Text('Ödev Takibi'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline, color: Colors.black),
-            tooltip: 'Ödev Ekle',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const HomeworkScreen(),
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Align(
+            alignment: Alignment.centerRight,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.list_alt),
+                label: const Text('Sınıf Takip Listesi'),
+                onPressed: _navigateToClassHomeworkTrackingPage,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blueGrey,
+                  foregroundColor: Colors.white,
                 ),
-              ).then((_) {
-                // Refresh homework list when returning
-                context.read<HomeworkBloc>().add(const LoadHomeworks());
-              });
-            },
-          ),
-          const SizedBox(width: 8),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: ElevatedButton(
-              onPressed: _navigateToClassHomeworkTrackingPage,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 0, 0, 0),
-                foregroundColor: Colors.white,
               ),
-              child: const Text('Sınıf Takip Listesi'),
+            ),
+          ),
+          // Headers
+          const Row(
+            children: [
+              Padding(
+                padding: EdgeInsets.only(left: 8.0, bottom: 8.0),
+                child: Text('Sınıflar',
+                    style:
+                        TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+              ),
+              Spacer(),
+              Padding(
+                padding: EdgeInsets.only(right: 8.0, bottom: 8.0),
+                child: Text('Sınıfa Atanan Ödevler',
+                    style:
+                        TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+              ),
+              Spacer(),
+              Padding(
+                padding: EdgeInsets.only(right: 8.0, bottom: 8.0),
+                child: Text('Öğrenci Bilgileri',
+                    style:
+                        TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+              ),
+              Spacer(),
+            ],
+          ),
+
+          // Main Content Area
+          Padding(
+            padding: const EdgeInsets.only(left: 15),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Left Panel: Class List
+                SizedBox(
+                  width: 150,
+                  child: _buildClassList(),
+                ),
+                const SizedBox(width: 16.0),
+
+                // Middle and Right Panels
+                Expanded(
+                  flex: 4,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(flex: 2, child: _buildHomeworkList()),
+                      const SizedBox(width: 50.0),
+                      Expanded(flex: 2, child: _buildStudentInfo()),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Bottom Section: Student List
+          Expanded(
+            child: Card(
+              elevation: 2,
+              child: _buildStudentList(),
             ),
           ),
         ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Headers
-            const Row(
-              children: [
-                Padding(
-                  padding: EdgeInsets.only(left: 8.0, bottom: 8.0),
-                  child: Text('Sınıflar',
-                      style:
-                          TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-                ),
-                Spacer(),
-                Padding(
-                  padding: EdgeInsets.only(right: 8.0, bottom: 8.0),
-                  child: Text('Sınıfa Atanan Ödevler',
-                      style:
-                          TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-                ),
-                Spacer(),
-                Padding(
-                  padding: EdgeInsets.only(right: 8.0, bottom: 8.0),
-                  child: Text('Öğrenci Bilgileri',
-                      style:
-                          TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-                ),
-                Spacer(),
-              ],
-            ),
-
-            // Main Content Area
-            Padding(
-              padding: const EdgeInsets.only(left: 15),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Left Panel: Class List
-                  SizedBox(
-                    width: 150,
-                    child: _buildClassList(),
-                  ),
-                  const SizedBox(width: 16.0),
-
-                  // Middle and Right Panels
-                  Expanded(
-                    flex: 4,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(flex: 2, child: _buildHomeworkList()),
-                        const SizedBox(width: 50.0),
-                        Expanded(flex: 2, child: _buildStudentInfo()),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Bottom Section: Student List
-            Expanded(
-              child: Card(
-                elevation: 2,
-                child: _buildStudentList(),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

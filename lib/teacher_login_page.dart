@@ -2,9 +2,10 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
-import 'package:ogrenci_takip_sistemi/main.dart';
+import 'package:ogrenci_takip_sistemi/app/main.dart';
 import 'api.dart/teacherApi.dart';
 import 'service/teacher_service.dart';
+import 'core/config/app_config.dart';
 
 class TeacherLoginPage extends StatefulWidget {
   @override
@@ -13,7 +14,7 @@ class TeacherLoginPage extends StatefulWidget {
 
 class _TeacherLoginPageState extends State<TeacherLoginPage> {
   final TeacherApiService _apiService =
-      TeacherApiService(baseUrl: 'http://localhost:3000');
+      TeacherApiService(baseUrl: "http://localhost:3000 ");
   final TextEditingController _nameController = TextEditingController();
   File? _selectedImage;
   bool _isLoading = false;

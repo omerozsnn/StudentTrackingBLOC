@@ -34,4 +34,14 @@ class Course {
       'egitimOgretimYiliId': egitimOgretimYiliId,
     };
   }
+
+  Course copyWith({
+    int? id,
+    String? dersAdi,
+  }) {
+    return Course(
+      id: id ?? this.id,
+      dersAdi: dersAdi ?? this.dersAdi,
+    );
+  }
 }

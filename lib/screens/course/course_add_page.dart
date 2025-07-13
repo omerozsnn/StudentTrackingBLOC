@@ -6,6 +6,11 @@ import 'package:ogrenci_takip_sistemi/blocs/course/course_state.dart';
 import 'package:ogrenci_takip_sistemi/models/courses_model.dart';
 import 'package:ogrenci_takip_sistemi/screens/course/course_class_assign_page.dart';
 import 'package:ogrenci_takip_sistemi/utils/ui_helpers.dart';
+import 'package:ogrenci_takip_sistemi/core/theme/app_colors.dart';
+import 'package:ogrenci_takip_sistemi/widgets/course/course_list_view.dart';
+import 'package:ogrenci_takip_sistemi/widgets/course/course_stats_bar.dart';
+import 'package:ogrenci_takip_sistemi/widgets/course/search_and_add_course_card.dart';
+import 'package:ogrenci_takip_sistemi/widgets/common/loading_indicator.dart';
 
 class CourseAddPage extends StatefulWidget {
   const CourseAddPage({super.key});
@@ -16,224 +21,183 @@ class CourseAddPage extends StatefulWidget {
 
 class _CourseAddPageState extends State<CourseAddPage> {
   final TextEditingController _controller = TextEditingController();
-  Course? _selectedCourse;
+  final FocusNode _focusNode = FocusNode();
+  String? _searchTerm;
 
   @override
   void initState() {
     super.initState();
-    // Load courses when page initializes
-    BlocProvider.of<CourseBloc>(context).add(LoadCourses());
+    context.read<CourseBloc>().add(LoadCourses());
+    _controller.addListener(_onSearchChanged);
   }
 
-  void _onCourseTap(Course course) {
-    setState(() {
-      if (_selectedCourse != null && _selectedCourse!.id == course.id) {
-        _selectedCourse = null;
-        _controller.clear();
-      } else {
-        _selectedCourse = course;
-        _controller.text = course.dersAdi;
-      }
-    });
+  @override
+  void dispose() {
+    _controller.removeListener(_onSearchChanged);
+    _controller.dispose();
+    _focusNode.dispose();
+    super.dispose();
   }
 
-  void _addCourse() {
-    if (_controller.text.isNotEmpty) {
-      final newCourse = Course(id: 0, dersAdi: _controller.text);
-      BlocProvider.of<CourseBloc>(context).add(AddCourse(newCourse));
+  void _onSearchChanged() {
+    if (context.read<CourseBloc>().state.selectedCourse == null) {
+      setState(() {
+        _searchTerm = _controller.text;
+      });
+    }
+  }
+  
+  void _onSelectCourse(Course course) {
+    final courseBloc = context.read<CourseBloc>();
+    if (courseBloc.state.selectedCourse?.id == course.id) {
+      // Deselecting
+      courseBloc.add(const SelectCourse(null));
       _controller.clear();
+    } else {
+      // Selecting for edit
+      _controller.removeListener(_onSearchChanged);
+      courseBloc.add(SelectCourse(course));
+      _controller.text = course.dersAdi;
+      setState(() {
+        _searchTerm = null;
+      });
+      _controller.addListener(_onSearchChanged);
+    }
+  }
+
+  void _onEditCourse(Course course) {
+    _onSelectCourse(course);
+    _focusNode.requestFocus();
+  }
+
+  void _addOrUpdateCourse() {
+    final courseBloc = context.read<CourseBloc>();
+    final selectedCourse = courseBloc.state.selectedCourse;
+
+    if (_controller.text.isNotEmpty) {
+      if (selectedCourse == null) {
+        // Add new course
+        final newCourse = Course(id: 0, dersAdi: _controller.text);
+        courseBloc.add(AddCourse(newCourse));
+      } else {
+        // Update existing course
+        final updatedCourse = selectedCourse.copyWith(dersAdi: _controller.text);
+        courseBloc.add(UpdateCourse(updatedCourse));
+      }
+      _controller.clear();
+      _focusNode.unfocus();
+      courseBloc.add(const SelectCourse(null));
+
     } else {
       UIHelpers.showErrorMessage(context, 'Ders adı zorunludur!');
     }
   }
 
-  void _updateCourse() {
-    if (_selectedCourse != null && _controller.text.isNotEmpty) {
-      final updatedCourse = Course(id: _selectedCourse!.id, dersAdi: _controller.text);
-      BlocProvider.of<CourseBloc>(context).add(UpdateCourse(updatedCourse));
-      setState(() {
-        _selectedCourse = null;
-        _controller.clear();
-      });
-    } else {
-      UIHelpers.showErrorMessage(context, 'Ders adı ve ders seçimi zorunludur!');
-    }
-  }
+  Future<void> _removeCourse(int courseId) async {
+    final confirm = await UIHelpers.showConfirmationDialog(
+      context: context,
+      title: 'Emin misiniz?',
+      content: 'Bu dersi silmek istediğinizden emin misiniz?',
+    );
 
-  Future<void> _removeCourse() async {
-    if (_selectedCourse != null) {
-      final confirm = await UIHelpers.showConfirmationDialog(
-        context: context,
-        title: 'Emin misiniz?',
-        content: 'Bu dersi silmek istediğinizden emin misiniz?',
-      );
-
-      if (confirm) {
-        BlocProvider.of<CourseBloc>(context).add(DeleteCourse(_selectedCourse!.id));
-        setState(() {
-          _selectedCourse = null;
-          _controller.clear();
-        });
-      }
-    } else {
-      UIHelpers.showErrorMessage(context, 'Ders seçimi zorunludur!');
+    if (confirm) {
+      context.read<CourseBloc>().add(DeleteCourse(courseId));
+      _controller.clear();
+      context.read<CourseBloc>().add(const SelectCourse(null));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Ders Ekleme'),
-        backgroundColor: Colors.deepPurpleAccent,
-        foregroundColor: Colors.white,
-        actions: [
-          // Ders Atama sayfasına yönlendirme butonu
-          IconButton(
-            icon: const Icon(Icons.assignment),
-            tooltip: 'Ders Atama',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const CourseClassAssignPage(),
-                ),
-              ).then((_) {
-                // Reload courses when returning from CourseAssignPage
-                BlocProvider.of<CourseBloc>(context).add(LoadCourses());
-              });
-            },
-          ),
-        ],
-      ),
-      body: BlocConsumer<CourseBloc, CourseState>(
-        listener: (context, state) {
-          if (state is CourseOperationSuccess) {
-            UIHelpers.showSuccessMessage(context, state.message);
-          } else if (state is CourseError) {
-            UIHelpers.showErrorMessage(context, state.message);
-          }
-        },
-        builder: (context, state) {
-          return Padding(
+    return BlocConsumer<CourseBloc, CourseState>(
+      listener: (context, state) {
+        if (state is CourseOperationSuccess) {
+          UIHelpers.showSuccessMessage(context, state.message);
+        } else if (state is CourseError) {
+          UIHelpers.showErrorMessage(context, state.message);
+        }
+      },
+      builder: (context, state) {
+        final courses = state.courses;
+        final isLoading = state is CourseLoading;
+
+        return Container(
+          color: AppColors.background,
+          child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Ders adı için giriş alanı
-                TextField(
-                  controller: _controller,
-                  decoration: InputDecoration(
-                    labelText: 'Ders Adı',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey[100],
-                  ),
+                Expanded(
+                  child: _buildUnifiedCard(state, courses, isLoading),
                 ),
-                const SizedBox(height: 20),
-                // Ekle, Güncelle ve Sil butonları
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: state is CourseLoading
-                            ? null
-                            : (_selectedCourse == null ? _addCourse : _updateCourse),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _selectedCourse == null
-                              ? Colors.deepPurpleAccent
-                              : Colors.green,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 15),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        child: Text(
-                          _selectedCourse == null ? 'Ekle' : 'Güncelle',
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    if (_selectedCourse != null)
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: state is CourseLoading ? null : _removeCourse,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.redAccent,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 15),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          child: const Text('Sil', style: TextStyle(fontSize: 16)),
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                // Ders listesini gösteren bölüm
-                if (state is CourseLoading)
-                  const Expanded(
-                    child: Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                  )
-                else
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: state is CoursesLoaded ? state.courses.length : 0,
-                      itemBuilder: (context, index) {
-                        if (state is CoursesLoaded) {
-                          final course = state.courses[index];
-                          final isSelected = _selectedCourse != null && 
-                                           course.id == _selectedCourse!.id;
-
-                          return Card(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              side: isSelected
-                                  ? BorderSide(color: Colors.deepPurpleAccent, width: 2)
-                                  : BorderSide.none,
-                            ),
-                            color: isSelected 
-                                ? Colors.deepPurple.shade50 
-                                : Colors.white,
-                            elevation: isSelected ? 8 : 4,
-                            margin: const EdgeInsets.symmetric(vertical: 8),
-                            child: ListTile(
-                              title: Text(
-                                course.dersAdi,
-                                style: TextStyle(
-                                  fontWeight: isSelected 
-                                      ? FontWeight.bold 
-                                      : FontWeight.normal,
-                                  color: isSelected 
-                                      ? Colors.deepPurple 
-                                      : Colors.black,
-                                ),
-                              ),
-                              selected: isSelected,
-                              onTap: () => _onCourseTap(course),
-                              trailing: isSelected
-                                  ? const Icon(Icons.check_circle,
-                                      color: Colors.deepPurpleAccent)
-                                  : null,
-                            ),
-                          );
-                        }
-                        return const SizedBox();
-                      },
-                    ),
-                  ),
               ],
             ),
-          );
-        },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildUnifiedCard(CourseState state, List<Course> courses, bool isLoading) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFF3498DB), 
+            Color(0xFF1ABC9C), 
+            Color(0xFFF39C12), 
+            Color(0xFFE74C3C),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4)
+          )
+        ]
+      ),
+      padding: const EdgeInsets.all(3),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(13),
+        ),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+              child: SearchAndAddCourseCard(
+                controller: _controller,
+                focusNode: _focusNode,
+                isEditing: state.selectedCourse != null,
+                onSearch: () {
+                  _focusNode.unfocus();
+                },
+                onAdd: _addOrUpdateCourse,
+              ),
+            ),
+            const Divider(height: 1, indent: 24, endIndent: 24),
+            Expanded(
+              child: isLoading && courses.isEmpty
+                  ? const LoadingIndicator()
+                  : CourseListView(
+                      courses: courses,
+                      selectedCourse: state.selectedCourse,
+                      onSelect: _onSelectCourse,
+                      onEdit: _onEditCourse,
+                      onDelete: _removeCourse,
+                      searchTerm: _searchTerm,
+                    ),
+            ),
+            CourseStatsBar(
+              courseCount: courses.length,
+            )
+          ],
+        ),
       ),
     );
   }

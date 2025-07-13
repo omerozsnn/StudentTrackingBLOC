@@ -109,7 +109,7 @@ class _ClassPrayerSurahTrackingPageState
       final List<Map<String, dynamic>> filteredPrayerSurahs = [];
 
       for (var assigned in assignedData) {
-        final int prayerSurahId = assigned['dua_sure_id'];
+        final int prayerSurahId = assigned.duaSureId;
         if (!uniquePrayerSurahIds.contains(prayerSurahId)) {
           uniquePrayerSurahIds.add(prayerSurahId);
 
@@ -117,7 +117,7 @@ class _ClassPrayerSurahTrackingPageState
           final prayerSurahDetails =
               await prayerSurahApiService.getPrayerSurahById(prayerSurahId);
           if (prayerSurahDetails != null) {
-            filteredPrayerSurahs.add(prayerSurahDetails);
+            filteredPrayerSurahs.add(prayerSurahDetails.toJson());
           }
         }
       }

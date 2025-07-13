@@ -24,6 +24,8 @@ class ApiService {
           courseItems = responseData['data'] as List<dynamic>;
         } else if (responseData.containsKey('results')) {
           courseItems = responseData['results'] as List<dynamic>;
+        } else if (responseData.containsKey('rows')) {
+          courseItems = responseData['rows'] as List<dynamic>;
         } else {
           // If no recognizable list field, use empty list
           print('API response structure not recognized: $responseData');

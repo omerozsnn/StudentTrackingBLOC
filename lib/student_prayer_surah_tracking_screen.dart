@@ -169,7 +169,7 @@ class _SudentPrayerSurahScreenState extends State<SudentPrayerSurahScreen> {
         // Her bir dua/sure için detay bilgisini çek
         for (var prayer in prayerSurahList) {
           try {
-            final duaSureId = prayer['dua_sure_id'];
+            final duaSureId = prayer.duaSureId;
             if (duaSureId != null) {
               // Dua/Sure detayını çek
               final duaSureDetail =
@@ -178,9 +178,9 @@ class _SudentPrayerSurahScreenState extends State<SudentPrayerSurahScreen> {
               if (mounted) {
                 setState(() {
                   assignedPrayers.add({
-                    'id': prayer['id']?.toString() ?? '',
+                    'id': prayer.duaSureId?.toString() ?? '',
                     'dua_sure_id': duaSureId.toString(),
-                    'dua_sure_adi': duaSureDetail['dua_sure_adi'] ?? 'İsimsiz',
+                    'dua_sure_adi': duaSureDetail.duaSureAdi ?? 'İsimsiz',
                   });
                 });
               }

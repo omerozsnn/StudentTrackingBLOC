@@ -698,7 +698,7 @@ class _TeacherControlState extends State<TeacherControl>
 
       for (var assigned in assignedPrayerSurahs) {
         try {
-          final duaSureId = assigned['dua_sure_id'];
+          final duaSureId = assigned.duaSureId;
           if (duaSureId != null) {
             // Dua/Sure detayını çek
             final duaSureDetail =
@@ -715,9 +715,9 @@ class _TeacherControlState extends State<TeacherControl>
             bool isPositive = tracking != null && tracking['durum'] == 'Okudu';
 
             processedData.add({
-              'id': assigned['id'],
+              'id': assigned.duaSureId,
               'dua_sure_id': duaSureId.toString(),
-              'dua_sure_adi': duaSureDetail['dua_sure_adi'] ?? 'İsimsiz',
+              'dua_sure_adi': duaSureDetail.duaSureAdi ?? 'İsimsiz',
               'durum': tracking?['durum'] ?? 'Okumadı',
               'degerlendirme': tracking?['degerlendirme'] ?? '',
               'createdAt':

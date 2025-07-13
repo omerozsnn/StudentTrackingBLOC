@@ -19,7 +19,7 @@ class _BilgiAktarmaPageState extends State<BilgiAktarmaPage> {
   final unitApi.ApiService unitService = unitApi.ApiService();
   final studentApi.ApiService studentService = studentApi.ApiService();
   final prayerSurahApi.PrayerSurahApiService prayerSurahService =
-      prayerSurahApi.PrayerSurahApiService();
+      prayerSurahApi.PrayerSurahApiService(baseUrl: 'http://localhost:3000');
   final homeworkApi.ApiService homeworkService = homeworkApi.ApiService();
   final misbehaviourApi.MisbehaviourApiService misbehaviourService =
       misbehaviourApi.MisbehaviourApiService(baseUrl: 'http://localhost:3000');

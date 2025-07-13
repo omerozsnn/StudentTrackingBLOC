@@ -509,7 +509,7 @@ class _KarneEkraniState extends State<KarneEkrani> {
             'degerlendirme':
                 tracking['degerlendirme'] ?? 'Değerlendirme bulunamadı',
             'durum': tracking['durum'] ?? 'Durum bulunamadı',
-            'dua_sure_adi': prayerSurahDetail['dua_sure_adi'] ?? 'Adı Yok',
+            'dua_sure_adi': prayerSurahDetail.duaSureAdi ?? 'Adı Yok',
             'createdAt': tracking['createdAt'],
           });
         }

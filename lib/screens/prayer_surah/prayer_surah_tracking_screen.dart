@@ -5,7 +5,7 @@ import 'package:ogrenci_takip_sistemi/blocs/prayer_surah_tracking/prayer_surah_t
 import 'package:ogrenci_takip_sistemi/blocs/prayer_surah_tracking/prayer_surah_tracking_event.dart';
 import 'package:ogrenci_takip_sistemi/blocs/prayer_surah_tracking/prayer_surah_tracking_state.dart';
 import 'package:ogrenci_takip_sistemi/class_prayer_surah_tracking_page.dart';
-import 'package:ogrenci_takip_sistemi/screens/prayer_surah/prayer_surah_screen.dart';
+import 'package:ogrenci_takip_sistemi/screens/prayer_surah/prayer_surah_management_page.dart';
 import 'package:ogrenci_takip_sistemi/student_prayer_surah_tracking_screen.dart';
 import 'package:ogrenci_takip_sistemi/widgets/prayer_surah/student_tracking_list.dart';
 
@@ -59,141 +59,114 @@ class _PrayerSurahTrackingScreenState extends State<PrayerSurahTrackingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.blueGrey,
-        foregroundColor: Colors.white,
-        title: const Text('Sure ve Dua Takibi'),
-        actions: [
-          // Sure ve Dua Ekleme button
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline),
-            tooltip: 'Sure ve Dua Ekle',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const PrayerSurahScreen(),
+    return BlocConsumer<PrayerSurahTrackingBloc, PrayerSurahTrackingState>(
+      listener: (context, state) {
+        if (state.status == PrayerSurahTrackingStatus.failure &&
+            state.errorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.errorMessage!)),
+          );
+        }
+      },
+      builder: (context, state) {
+        return Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Align(
+                alignment: Alignment.centerRight,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.list_alt),
+                  label: const Text('Sınıf Takip Listesi'),
+                  onPressed: () => _navigateToClassTrackingPage(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueGrey,
+                    foregroundColor: Colors.white,
+                  ),
                 ),
-              ).then((_) {
-                // Refresh data when returning from Sure ve Dua Ekleme page
-                final bloc = context.read<PrayerSurahTrackingBloc>();
-                if (bloc.state.selectedClass != null) {
-                  bloc.add(
-                      LoadStudentsWithTrackings(bloc.state.selectedClass!));
-                }
-              });
-            },
-          ),
-          const SizedBox(width: 8),
-          // Existing Sınıf Takip Listesi button
-          ElevatedButton(
-            onPressed: () => _navigateToClassTrackingPage(context),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blueGrey,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Sınıf Takip Listesi'),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: BlocConsumer<PrayerSurahTrackingBloc, PrayerSurahTrackingState>(
-        listener: (context, state) {
-          if (state.status == PrayerSurahTrackingStatus.failure &&
-              state.errorMessage != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.errorMessage!)),
-            );
-          }
-        },
-        builder: (context, state) {
-          return Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Headers
-                const Row(
-                  children: [
-                    Padding(
-                      padding: EdgeInsets.only(left: 8.0, bottom: 8.0),
-                      child: Text(
-                        'Sınıflar',
-                        textAlign: TextAlign.left,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                        ),
+              ),
+              const SizedBox(height: 8),
+              // Headers
+              const Row(
+                children: [
+                  Padding(
+                    padding: EdgeInsets.only(left: 8.0, bottom: 8.0),
+                    child: Text(
+                      'Sınıflar',
+                      textAlign: TextAlign.left,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
                       ),
-                    ),
-                    Spacer(),
-                    Padding(
-                      padding: EdgeInsets.only(right: 8.0, bottom: 8.0),
-                      child: Text(
-                        'Sınıfa Atanan Dua ve Sure Listesi',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    Spacer(),
-                    Padding(
-                      padding: EdgeInsets.only(right: 8.0, bottom: 8.0),
-                      child: Text(
-                        'Öğrenci Bilgileri',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    Spacer(),
-                  ],
-                ),
-                // Class and Dua/Sure Lists
-                _buildTopSection(context, state),
-                const SizedBox(height: 16),
-                // Student List
-                Expanded(
-                  child: Card(
-                    elevation: 2,
-                    child: StudentTrackingList(
-                      students: state.students,
-                      studentTrackings: state.studentTrackings,
-                      dropdownControllers: dropdownControllers,
-                      options: options,
-                      onStatusChanged: (studentId, value) {
-                        context.read<PrayerSurahTrackingBloc>().add(
-                              UpdateStudentTrackingStatus(
-                                  studentId, value ? 'Okudu' : 'Okumadı'),
-                            );
-                      },
-                      onDegerlendirmeChanged: (studentId, value) {
-                        context.read<PrayerSurahTrackingBloc>().add(
-                              UpdateStudentTrackingDegerlendirme(
-                                  studentId, value),
-                            );
-                      },
-                      onEkGorusChanged: (studentId, value) {
-                        context.read<PrayerSurahTrackingBloc>().add(
-                              UpdateStudentTrackingEkGorus(studentId, value),
-                            );
-                      },
-                      onStudentSelected: (studentId) {
-                        context.read<PrayerSurahTrackingBloc>().add(
-                              SelectStudent(studentId),
-                            );
-                      },
                     ),
                   ),
-                )
-              ],
-            ),
-          );
-        },
-      ),
+                  Spacer(),
+                  Padding(
+                    padding: EdgeInsets.only(right: 8.0, bottom: 8.0),
+                    child: Text(
+                      'Sınıfa Atanan Dua ve Sure Listesi',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Spacer(),
+                  Padding(
+                    padding: EdgeInsets.only(right: 8.0, bottom: 8.0),
+                    child: Text(
+                      'Öğrenci Bilgileri',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Spacer(),
+                ],
+              ),
+              // Class and Dua/Sure Lists
+              _buildTopSection(context, state),
+              const SizedBox(height: 16),
+              // Student List
+              Expanded(
+                child: Card(
+                  elevation: 2,
+                  child: StudentTrackingList(
+                    students: state.students,
+                    studentTrackings: state.studentTrackings,
+                    dropdownControllers: dropdownControllers,
+                    options: options,
+                    onStatusChanged: (studentId, value) {
+                      context.read<PrayerSurahTrackingBloc>().add(
+                            UpdateStudentTrackingStatus(
+                                studentId, value ? 'Okudu' : 'Okumadı'),
+                          );
+                    },
+                    onDegerlendirmeChanged: (studentId, value) {
+                      context.read<PrayerSurahTrackingBloc>().add(
+                            UpdateStudentTrackingDegerlendirme(
+                                studentId, value),
+                          );
+                    },
+                    onEkGorusChanged: (studentId, value) {
+                      context.read<PrayerSurahTrackingBloc>().add(
+                            UpdateStudentTrackingEkGorus(studentId, value),
+                          );
+                    },
+                    onStudentSelected: (studentId) {
+                      context.read<PrayerSurahTrackingBloc>().add(
+                            SelectStudent(studentId),
+                          );
+                    },
+                  ),
+                ),
+              )
+            ],
+          ),
+        );
+      },
     );
   }
 

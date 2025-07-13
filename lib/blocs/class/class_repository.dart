@@ -8,7 +8,7 @@ class ClassRepository {
   ClassRepository({required this.apiService});
 
   // Sınıfları getir
-  Future<List<Classes>> getClasses({int page = 1, int limit = 10}) async {
+  Future<List<Classes>> getClasses({int page = 1, int limit = 50}) async {
     return await apiService.getClasses(page: page, limit: limit);
   }
 

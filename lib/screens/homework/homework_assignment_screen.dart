@@ -106,115 +106,94 @@ class _HomeworkAssignmentScreenState extends State<HomeworkAssignmentScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Ödev Atama'),
-        backgroundColor: Colors.teal,
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline),
-            tooltip: 'Ödev Ekle',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const HomeworkScreen()),
-              ).then((_) =>
-                  context.read<HomeworkBloc>().add(const LoadHomeworks()));
-            },
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: BlocListener<StudentHomeworkBloc, StudentHomeworkState>(
-        listener: (context, state) {
-          if (state.status == StudentHomeworkStatus.error) {
-            UIHelpers.showErrorMessage(
-                context, state.errorMessage ?? 'Bir hata oluştu');
-          }
-        },
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      BlocBuilder<HomeworkBloc, HomeworkState>(
-                        builder: (context, state) {
-                          return state.status == HomeworkStatus.loading
-                              ? const Center(child: CircularProgressIndicator())
-                              : HomeworkSelector(
-                                  homeworks: state.homeworks,
-                                  selectedHomework: _selectedHomework,
-                                  onHomeworkSelected: _handleHomeworkSelected,
-                                );
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      BlocBuilder<ClassBloc, ClassState>(
-                        builder: (context, state) {
-                          return state is ClassLoading
-                              ? const Center(child: CircularProgressIndicator())
-                              : ClassSelector(
-                                  classes: state.classes,
-                                  selectedClass: _selectedClass,
-                                  onClassSelected: _handleClassSelected,
-                                );
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      if (_selectedClass != null)
-                        BlocBuilder<StudentBloc, StudentState>(
-                          builder: (context, state) {
-                            if (state is StudentLoading) {
-                              return const Center(
-                                  child: CircularProgressIndicator());
-                            }
-                            if (state is StudentsLoaded) {
-                              return SizedBox(
-                                height: 400,
-                                child: StudentSelector(
-                                  students: state.students,
-                                  selectedStudentIds: _selectedStudentIds,
-                                  onSelectionChanged:
-                                      _handleStudentSelectionChanged,
-                                ),
+    return BlocListener<StudentHomeworkBloc, StudentHomeworkState>(
+      listener: (context, state) {
+        if (state.status == StudentHomeworkStatus.error) {
+          UIHelpers.showErrorMessage(
+              context, state.errorMessage ?? 'Bir hata oluştu');
+        }
+      },
+      child: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    BlocBuilder<HomeworkBloc, HomeworkState>(
+                      builder: (context, state) {
+                        return state.status == HomeworkStatus.loading
+                            ? const Center(child: CircularProgressIndicator())
+                            : HomeworkSelector(
+                                homeworks: state.homeworks,
+                                selectedHomework: _selectedHomework,
+                                onHomeworkSelected: _handleHomeworkSelected,
                               );
-                            }
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    BlocBuilder<ClassBloc, ClassState>(
+                      builder: (context, state) {
+                        return state is ClassLoading
+                            ? const Center(child: CircularProgressIndicator())
+                            : ClassSelector(
+                                classes: state.classes,
+                                selectedClass: _selectedClass,
+                                onClassSelected: _handleClassSelected,
+                              );
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    if (_selectedClass != null)
+                      BlocBuilder<StudentBloc, StudentState>(
+                        builder: (context, state) {
+                          if (state is StudentLoading) {
                             return const Center(
-                                child: Text(
-                                    'Öğrenci yüklenirken bir sorun oluştu'));
-                          },
-                        ),
-                      const SizedBox(height: 20),
-                      if (_selectedClass != null)
-                        Center(
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.teal,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 20, vertical: 15),
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10)),
-                            ),
-                            icon: const Icon(Icons.assignment_turned_in),
-                            label: Text(
-                              'Ödevi ${_selectedStudentIds.length} Öğrenciye Ata',
-                              style: const TextStyle(fontSize: 16),
-                            ),
-                            onPressed: _selectedStudentIds.isNotEmpty
-                                ? _assignHomework
-                                : null,
+                                child: CircularProgressIndicator());
+                          }
+                          if (state is StudentsLoaded) {
+                            return SizedBox(
+                              height: 400,
+                              child: StudentSelector(
+                                students: state.students,
+                                selectedStudentIds: _selectedStudentIds,
+                                onSelectionChanged:
+                                    _handleStudentSelectionChanged,
+                              ),
+                            );
+                          }
+                          return const Center(
+                              child: Text(
+                                  'Öğrenci yüklenirken bir sorun oluştu'));
+                        },
+                      ),
+                    const SizedBox(height: 20),
+                    if (_selectedClass != null)
+                      Center(
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.teal,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 15),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10)),
                           ),
+                          icon: const Icon(Icons.assignment_turned_in),
+                          label: Text(
+                            'Ödevi ${_selectedStudentIds.length} Öğrenciye Ata',
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                          onPressed: _selectedStudentIds.isNotEmpty
+                              ? _assignHomework
+                              : null,
                         ),
-                    ],
-                  ),
+                      ),
+                  ],
                 ),
               ),
-      ),
+            ),
     );
   }
 }

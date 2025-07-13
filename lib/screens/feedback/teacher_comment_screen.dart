@@ -16,6 +16,7 @@ import 'package:ogrenci_takip_sistemi/widgets/feedback/student_list_widget.dart'
 import 'package:ogrenci_takip_sistemi/widgets/feedback/student_detail_widget.dart';
 import 'package:ogrenci_takip_sistemi/widgets/feedback/bulk_feedback_widget.dart';
 import 'package:ogrenci_takip_sistemi/widgets/feedback/feedback_card_widget.dart';
+import 'package:ogrenci_takip_sistemi/widgets/common/modern_app_header.dart';
 
 // For backward compatibility - exports TeacherCommentScreen as TeacherCommentPage
 export 'package:ogrenci_takip_sistemi/widgets/feedback/feedback_card_widget.dart';
@@ -179,99 +180,7 @@ class _TeacherCommentScreenContent extends StatelessWidget {
           SnackbarHelper.showErrorSnackBar(context, state.message);
         }
       },
-      child: Scaffold(
-        appBar: _buildAppBar(context),
-        body: _buildBody(context),
-      ),
-    );
-  }
-
-  AppBar _buildAppBar(BuildContext context) {
-    final isMultiSelectMode = context.select<TeacherCommentBloc, bool>((bloc) {
-      final state = bloc.state;
-      if (state is StudentsLoadedState) {
-        return state.isMultiSelectMode;
-      }
-      return false;
-    });
-
-    final isSubmittingBulk = context.select<TeacherCommentBloc, bool>((bloc) {
-      final state = bloc.state;
-      return state is BulkFeedbackOperationState && state.isInProgress;
-    });
-
-    return AppBar(
-      title: Row(
-        children: [
-          const Text('Öğretmen Görüşü', style: TextStyle(color: Colors.white)),
-          if (isMultiSelectMode)
-            Container(
-              margin: const EdgeInsets.only(left: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.people, size: 16, color: Colors.white),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Toplu Atama',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white.withOpacity(0.9),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-      backgroundColor: const Color(0xFF6C8997),
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Colors.white),
-        onPressed: () => Navigator.of(context).pop(),
-      ),
-      actions: [
-        // Add feedback option button
-        if (!isSubmittingBulk && !isMultiSelectMode)
-          IconButton(
-            icon: const Icon(Icons.add_comment, color: Colors.white),
-            tooltip: 'Yeni Görüş Ekle',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const TeacherFeedbackOptionScreen(),
-                ),
-              ).then((_) {
-                // Refresh feedback options when returning from option screen
-                context
-                    .read<TeacherCommentBloc>()
-                    .add(LoadFeedbackOptionsEvent());
-              });
-            },
-          ),
-
-        // Toggle multi-select mode button
-        if (!isSubmittingBulk)
-          IconButton(
-            icon: Icon(
-              isMultiSelectMode ? Icons.close : Icons.people,
-              color: Colors.white,
-            ),
-            tooltip: isMultiSelectMode
-                ? 'Toplu Atamayı İptal Et'
-                : 'Toplu Atama Moduna Geç',
-            onPressed: () {
-              context.read<TeacherCommentBloc>().add(
-                    ToggleMultiSelectModeEvent(!isMultiSelectMode),
-                  );
-            },
-          ),
-      ],
+      child: _buildBody(context),
     );
   }
 
@@ -285,51 +194,93 @@ class _TeacherCommentScreenContent extends StatelessWidget {
       return false;
     });
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            const Color(0xFF6C8997).withOpacity(0.1),
-            Colors.white,
-          ],
-        ),
-      ),
-      child: Row(
+    return Material(
+      color: Theme.of(context).colorScheme.background,
+      child: Column(
         children: [
-          // Left panel - Class and student list
-          Expanded(
-            flex: 2,
-            child: Card(
-              margin: const EdgeInsets.all(16),
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                children: [
-                  const ClassSelectionWidget(),
-                  Expanded(
-                    child: StudentListWidget(),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                if (isMultiSelectMode)
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.people,
+                            size: 16, color: Theme.of(context).primaryColor),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Toplu Atama Modu',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Theme.of(context).primaryColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ],
-              ),
+                const Spacer(),
+                ModernActionButton(
+                  label:
+                      isMultiSelectMode ? 'İptal' : 'Toplu Atama',
+                  icon: isMultiSelectMode ? Icons.close : Icons.people_outline,
+                  onPressed: () {
+                    context.read<TeacherCommentBloc>().add(
+                          ToggleMultiSelectModeEvent(!isMultiSelectMode),
+                        );
+                  },
+                  isOutlined: !isMultiSelectMode,
+                ),
+              ],
             ),
           ),
-
-          // Right panel - Either student details or bulk feedback form
           Expanded(
-            flex: 3,
-            child: Card(
-              margin: const EdgeInsets.fromLTRB(0, 16, 16, 16),
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: isMultiSelectMode
-                  ? BulkFeedbackWidget() // Show bulk mode
-                  : StudentDetailWidget(), // Show student details
+            child: Row(
+              children: [
+                // Left panel - Class and student list
+                Expanded(
+                  flex: 2,
+                  child: Card(
+                    margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      children: [
+                        const ClassSelectionWidget(),
+                        Expanded(
+                          child: StudentListWidget(),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Right panel - Either student details or bulk feedback form
+                Expanded(
+                  flex: 3,
+                  child: Card(
+                    margin: const EdgeInsets.fromLTRB(0, 8, 16, 16),
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: isMultiSelectMode
+                        ? BulkFeedbackWidget() // Show bulk mode
+                        : StudentDetailWidget(), // Show student details
+                  ),
+                ),
+              ],
             ),
           ),
         ],

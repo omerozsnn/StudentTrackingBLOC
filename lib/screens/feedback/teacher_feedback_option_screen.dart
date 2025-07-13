@@ -5,7 +5,10 @@ import 'package:ogrenci_takip_sistemi/blocs/teacher_feedback/teacher_feedback_bl
 import 'package:ogrenci_takip_sistemi/blocs/teacher_feedback/teacher_feedback_event.dart';
 import 'package:ogrenci_takip_sistemi/blocs/teacher_feedback/teacher_feedback_state.dart'
     as states;
-import 'package:ogrenci_takip_sistemi/widgets/feedback/teacher_feedback_option_item.dart';
+import 'package:ogrenci_takip_sistemi/widgets/feedback/teacher_feedback_input_form.dart';
+import 'package:ogrenci_takip_sistemi/widgets/feedback/teacher_feedback_list_view.dart';
+import 'package:ogrenci_takip_sistemi/widgets/common/modern_app_header.dart';
+import 'package:ogrenci_takip_sistemi/widgets/common/gradient_border_container.dart';
 import 'package:ogrenci_takip_sistemi/utils/ui_helpers.dart';
 import 'package:ogrenci_takip_sistemi/screens/feedback/teacher_comment_screen.dart';
 
@@ -86,180 +89,103 @@ class _TeacherFeedbackOptionScreenState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Öğretmen Görüşü Ekleme'),
-        backgroundColor: Colors.deepPurpleAccent,
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.assignment_ind),
-            tooltip: 'Görüş Atama',
-            onPressed: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const TeacherCommentPage(),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-      body: BlocConsumer<TeacherFeedbackBloc, states.TeacherFeedbackState>(
-        listener: (context, state) {
-          if (state is states.TeacherFeedbackOperationSuccess) {
-            UIHelpers.showSuccessMessage(context, state.message);
-          } else if (state is states.TeacherFeedbackError) {
-            UIHelpers.showErrorMessage(context, state.message);
-          }
-        },
-        builder: (context, state) {
-          return Padding(
+    return BlocConsumer<TeacherFeedbackBloc, states.TeacherFeedbackState>(
+      listener: (context, state) {
+        if (state is states.TeacherFeedbackOperationSuccess) {
+          UIHelpers.showSuccessMessage(context, state.message);
+        } else if (state is states.TeacherFeedbackError) {
+          UIHelpers.showErrorMessage(context, state.message);
+        }
+      },
+      builder: (context, state) {
+        final hasSelection = state is states.TeacherFeedbackOptionsLoaded &&
+            state.selectedOption != null;
+
+        final options = state is states.TeacherFeedbackOptionsLoaded
+            ? state.options
+            : <TeacherFeedbackOption>[];
+
+        final selectedOption =
+            state is states.TeacherFeedbackOptionsLoaded
+                ? state.selectedOption
+                : null;
+
+        final isLoading = state is states.TeacherFeedbackLoading;
+
+        return Material(
+          color: Theme.of(context).colorScheme.background,
+          child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                // Feedback input field
-                TextField(
-                  controller: _controller,
-                  decoration: InputDecoration(
-                    labelText: 'Öğretmen Görüşü',
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    filled: true,
-                    fillColor: Colors.grey[100],
-                  ),
-                  maxLines: 3,
+                Expanded(
+                  child: _buildUnifiedCard(
+                      state, options, selectedOption, hasSelection, isLoading),
                 ),
-                const SizedBox(height: 10),
-
-                // Action buttons
-                _buildActionButtons(state),
-
-                const SizedBox(height: 20),
-
-                // Feedback options list
-                _buildFeedbackList(state),
               ],
             ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildActionButtons(states.TeacherFeedbackState state) {
-    final bool hasSelection = state is states.TeacherFeedbackOptionsLoaded &&
-        state.selectedOption != null;
-
-    return Row(
-      children: [
-        // Add or Update button
-        Expanded(
-          child: ElevatedButton.icon(
-            onPressed: () {
-              if (hasSelection) {
-                final selectedOption =
-                    (state as states.TeacherFeedbackOptionsLoaded)
-                        .selectedOption!;
-                _updateFeedbackOption(selectedOption);
-              } else {
-                _addFeedbackOption();
-              }
-            },
-            icon: Icon(hasSelection ? Icons.update : Icons.add),
-            label: Text(hasSelection ? 'Güncelle' : 'Ekle'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor:
-                  hasSelection ? Colors.orange : Colors.deepPurpleAccent,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 15),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-        ),
-
-        // Show Delete button if an option is selected
-        if (hasSelection) ...[
-          const SizedBox(width: 10),
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: () {
-                final selectedOption =
-                    (state as states.TeacherFeedbackOptionsLoaded)
-                        .selectedOption!;
-                _deleteFeedbackOption(selectedOption);
-              },
-              icon: const Icon(Icons.delete),
-              label: const Text('Sil'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ),
-
-          // Clear selection button
-          IconButton(
-            onPressed: _clearSelection,
-            icon: const Icon(Icons.clear),
-            tooltip: 'Seçimi temizle',
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildFeedbackList(states.TeacherFeedbackState state) {
-    if (state is states.TeacherFeedbackLoading) {
-      return const Expanded(
-        child: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-
-    if (state is states.TeacherFeedbackOptionsLoaded) {
-      final options = state.options;
-      final selectedOption = state.selectedOption;
-
-      if (options.isEmpty) {
-        return const Expanded(
-          child: Center(
-            child: Text('Henüz hiç görüş eklenmemiş',
-                style: TextStyle(fontSize: 16)),
           ),
         );
-      }
+      },
+    );
+  }
 
-      return Expanded(
-        child: ListView.builder(
-          itemCount: options.length,
-          itemBuilder: (context, index) {
-            final option = options[index];
-            final isSelected =
-                selectedOption != null && option.id == selectedOption.id;
-
-            return TeacherFeedbackOptionItem(
-              option: option,
-              isSelected: isSelected,
-              onTap: () => _selectFeedbackOption(option),
-            );
-          },
+  Widget _buildUnifiedCard(
+    states.TeacherFeedbackState state, 
+    List<TeacherFeedbackOption> options, 
+    TeacherFeedbackOption? selectedOption, 
+    bool hasSelection, 
+    bool isLoading
+  ) {
+    return GradientBorderContainer(
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(3),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(13),
+          ),
+          child: Column(
+            children: [
+              // Input form section
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                child: TeacherFeedbackInputForm(
+                  controller: _controller,
+                  hasSelection: hasSelection,
+                  onAdd: _addFeedbackOption,
+                  onUpdate: () {
+                    if (hasSelection) {
+                      final selected = (state as states.TeacherFeedbackOptionsLoaded).selectedOption!;
+                      _updateFeedbackOption(selected);
+                    }
+                  },
+                  onDelete: hasSelection ? () {
+                    final selected = (state as states.TeacherFeedbackOptionsLoaded).selectedOption!;
+                    _deleteFeedbackOption(selected);
+                  } : null,
+                  onClear: hasSelection ? _clearSelection : null,
+                ),
+              ),
+              
+              const Divider(height: 1, indent: 24, endIndent: 24),
+              
+              // Feedback list section
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                  child: TeacherFeedbackListView(
+                    options: options,
+                    selectedOption: selectedOption,
+                    onOptionTap: _selectFeedbackOption,
+                    isLoading: isLoading,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-      );
-    }
-
-    // Default view for other states
-    return const Expanded(
-      child: Center(
-        child: Text('Görüşler yüklenemedi', style: TextStyle(fontSize: 16)),
       ),
     );
   }

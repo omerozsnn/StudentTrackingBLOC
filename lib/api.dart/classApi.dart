@@ -34,11 +34,17 @@ Future<List<Classes>> getClassesForScroll({int offset = 0, int limit = 50}) asyn
 
   if (response.statusCode == 200) {
     final Map<String, dynamic> jsonData = json.decode(response.body);
-    final List<dynamic> dataList = jsonData['data'];
+    
+    // Handle both 'data' and 'rows' keys for flexibility
+    final List<dynamic>? dataList = jsonData['data'] as List<dynamic>? ?? jsonData['rows'] as List<dynamic>?;
 
-    return dataList
-        .map((item) => Classes.fromJson(item as Map<String, dynamic>))
-        .toList();
+    if (dataList != null) {
+      return dataList
+          .map((item) => Classes.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } else {
+      throw Exception('API response does not contain a "data" or "rows" field.');
+    }
   } else {
     throw Exception('Failed to load classes for scroll');
   }
@@ -51,17 +57,24 @@ Future<List<Classes>> getClassesForScroll({int offset = 0, int limit = 50}) asyn
         await http.get(Uri.parse('$baseUrl/class?page=$page&limit=$limit'));
 
     if (response.statusCode == 200) {
-      final Map<String, dynamic> responseData = json.decode(response.body);
+      final responseBody = json.decode(response.body);
       
-      // Check if the API response has a 'data' field which contains the classes
-      if (responseData.containsKey('data') && responseData['data'] is List) {
-        final List<dynamic> dataList = responseData['data'];
-        return dataList
-            .map((item) => Classes.fromJson(item as Map<String, dynamic>))
-            .toList();
-      } else if (responseData is List) {
+      List<dynamic>? dataList;
+
+      if (responseBody is Map<String, dynamic>) {
+        // Check for 'data' or 'rows' keys
+        if (responseBody.containsKey('data') && responseBody['data'] is List) {
+          dataList = responseBody['data'];
+        } else if (responseBody.containsKey('rows') && responseBody['rows'] is List) {
+          dataList = responseBody['rows'];
+        }
+      } else if (responseBody is List) {
         // If the response is directly a list
-        return (responseData as List)
+        dataList = responseBody;
+      }
+
+      if (dataList != null) {
+        return dataList
             .map((item) => Classes.fromJson(item as Map<String, dynamic>))
             .toList();
       } else {

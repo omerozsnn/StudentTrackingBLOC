@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'custom_scroll_behavior.dart';
+import 'core/theme/custom_scroll_behavior.dart';
 
 /// A customizable scrollable table widget that supports both horizontal and vertical scrolling
 /// with mouse and touch interactions.

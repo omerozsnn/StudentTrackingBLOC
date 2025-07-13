@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:ogrenci_takip_sistemi/screens/daily_tracking/daily_tracking_screen.dart';
+import 'package:ogrenci_takip_sistemi/models/daily_tracking_model.dart';
+import 'package:ogrenci_takip_sistemi/models/student_model.dart';
+import 'package:ogrenci_takip_sistemi/daily_tracking_report.dart' as report;
 import 'package:printing/printing.dart';
-import 'daily_tracking_report.dart' as report;
-import 'daily_tracking_page.dart';
-import 'models/daily_tracking_model.dart';
+import 'package:intl/intl.dart';
 
 /// PDF raporu oluşturmak için kullanılan buton widget'ı
 /// AppBar'ın actions listesine eklenebilir.
@@ -70,7 +73,7 @@ class PDFReportButton extends StatelessWidget {
           child: ListTile(
             leading: Icon(Icons.grid_on),
             title: Text('Excel Stili Rapor'),
-            subtitle: Text('Excel formatına benzer matris görünüm'),
+            subtitle: Text('Excel formatına benzer matrix görünüm'),
           ),
         ),
       ],
@@ -82,9 +85,8 @@ class PDFReportButton extends StatelessWidget {
     return students
         .map((student) => report.Students(
               id: student.id,
-              name: student.name,
-              studentNumber:
-                  student.studentNumber ?? '', // Güncellenmiş parametre adı
+              name: student.adSoyad, // Student model'inde adSoyad property'si var
+              studentNumber: student.ogrenciNo ?? '', // ogrenciNo property'si kullan
             ))
         .toList();
   }
